@@ -1,3 +1,13 @@
 parameters:
     product_review_display_count_min: 1
     product_review_display_count_max: 30
+    product_review_save_image_dir: '%kernel.project_dir%/html/upload/product_review_image'
+    product_review_temp_image_dir: '%kernel.project_dir%/html/upload/product_review_temp_image'
+
+framework:
+  assets:
+    packages:
+      product_review_save_image:
+        base_path: '/html/upload/product_review_image'
+      product_review_temp_image:
+        base_path: '/html/upload/product_review_temp_image'

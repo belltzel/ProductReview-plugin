@@ -85,6 +85,8 @@ product_review.form.product_review.reviewer_url: URL
 product_review.form.product_review.title: タイトル
 product_review.form.product_review.comment: コメント
 product_review.form.product_review.recommend_level: おすすめレベル
+product_review.form.product_review.youtube_video_player: Youtube埋め込みコード
+product_review.form.product_review.image: 画像
 
 # 商品詳細画面への差し込みブロック
 product_review.front.product_detail.title: この商品のレビュー

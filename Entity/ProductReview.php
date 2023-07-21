@@ -65,6 +65,18 @@ class ProductReview extends AbstractEntity
     private $comment;
 
     /**
+     * @var string
+     *
+     * @ORM\Column(name="youtube_video_player", type="text", nullable=true)
+     */
+    private $youtube_video_player;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $filename;
+
+    /**
      * @var Sex
      *
      * @ORM\ManyToOne(targetEntity="Eccube\Entity\Master\Sex")
@@ -275,6 +287,54 @@ class ProductReview extends AbstractEntity
     public function setComment($comment)
     {
         $this->comment = $comment;
+
+        return $this;
+    }
+
+    /**
+     * Get youtube_video_player.
+     *
+     * @return string|null
+     */
+    public function getYoutubeVideoPlayer()
+    {
+        return $this->youtube_video_player;
+    }
+
+    /**
+     * Set youtube_video_player.
+     *
+     * @param string|null $youtube_video_player
+     *
+     * @return ProductReview
+     */
+    public function setYoutubeVideoPlayer($youtube_video_player = null)
+    {
+        $this->youtube_video_player = $youtube_video_player;
+
+        return $this;
+    }
+
+    /**
+     * Get filename.
+     *
+     * @return string|null
+     */
+    public function getFilename(): ?string
+    {
+        return $this->filename;
+    }
+
+    /**
+     * Set filename.
+     *
+     * @param string|null $filename
+     *
+     * @return ProductReview
+     */
+    public function setFilename(?string $filename): self
+    {
+        $this->filename = $filename;
 
         return $this;
     }

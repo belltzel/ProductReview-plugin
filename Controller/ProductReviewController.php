@@ -22,6 +22,7 @@ use Plugin\ProductReview42\Form\Type\ProductReviewType;
 use Plugin\ProductReview42\Repository\ProductReviewRepository;
 use Plugin\ProductReview42\Repository\ProductReviewStatusRepository;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -103,6 +104,10 @@ class ProductReviewController extends AbstractController
                     $ProductReview->setStatus($this->productReviewStatusRepository->find(ProductReviewStatus::HIDE));
                     $this->entityManager->persist($ProductReview);
                     $this->entityManager->flush($ProductReview);
+
+                    // 移動
+                    $file = new File($this->eccubeConfig['product_review_temp_image_dir'].'/'.$ProductReview->getFilename());
+                    $file->move($this->eccubeConfig['product_review_save_image_dir']);
 
                     log_info('Product review complete', ['id' => $Product->getId()]);
 
