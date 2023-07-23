@@ -105,14 +105,24 @@ class ProductReviewController extends AbstractController
                     $this->entityManager->persist($ProductReview);
                     $this->entityManager->flush($ProductReview);
 
+                    // 画像の登録
+                    $ProductReviewImage = new \Plugin\ProductReview42\Entity\ProductReviewImage();
+                    $ProductReviewImage
+                        ->setFileName($ProductReview->getFilename())
+                        ->setProductReview($ProductReview)
+                        ->setSortNo(1);
+                    $ProductReview->addProductReviewImage($ProductReviewImage);
+                    $this->entityManager->persist($ProductReviewImage);
+
                     // 移動
                     $file = new File($this->eccubeConfig['product_review_temp_image_dir'].'/'.$ProductReview->getFilename());
                     $file->move($this->eccubeConfig['product_review_save_image_dir']);
 
+                    $this->entityManager->flush();
+
                     log_info('Product review complete', ['id' => $Product->getId()]);
 
                     return $this->redirectToRoute('product_review_complete', ['id' => $Product->getId()]);
-                    break;
 
                 case 'back':
                     // 確認画面から投稿画面へ戻る

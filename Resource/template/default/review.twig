@@ -131,6 +131,16 @@
                             <!--タイトル-->
                             <strong>{{ ProductReview.title }}</strong>
 
+                            {% if ProductReview.ProductReviewImage is not empty %}
+                                {% for ProductReviewImage in ProductReview.ProductReviewImage %}
+                                    <br><br><img src="{{ asset(ProductReviewImage.fileName, 'product_review_save_image') }}" style="max-width: 300px">
+                                {% endfor %}
+                            {% endif %}
+
+                            {% if ProductReview.youtube_video_player is not null %}
+                                <br><br>{{ ProductReview.youtube_video_player|raw }}
+                            {% endif %}
+
                             <!--レビューコメント-->
                             <p>{{ ProductReview.comment|nl2br }}</p>
                         </li>

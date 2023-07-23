@@ -146,7 +146,9 @@ class ProductReviewType extends AbstractType
                     ])
                 ]
             ])
-            ->add('filename', HiddenType::class);
+            ->add('filename', HiddenType::class, [
+                'mapped' => false,
+            ]);
 
         $builder
             ->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event){
@@ -158,7 +160,7 @@ class ProductReviewType extends AbstractType
                         // アップロード済みのファイルをFileTypeにセット
                         $form["file"]->setData(
                             new File(
-                                $this->eccubeConfig["product_review_temp_image_dir"]."/".$ProductReview->getFilename()
+                                $this->eccubeConfig['product_review_temp_image_dir'].'/'.$ProductReview->getFilename()
                             )
                         );
                     }

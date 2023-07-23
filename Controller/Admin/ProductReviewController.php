@@ -20,14 +20,20 @@ use Eccube\Util\FormUtil;
 use Knp\Component\Pager\PaginatorInterface;
 use Plugin\ProductReview42\Entity\ProductReview;
 use Plugin\ProductReview42\Entity\ProductReviewConfig;
+use Plugin\ProductReview42\Entity\ProductReviewImage;
 use Plugin\ProductReview42\Form\Type\Admin\ProductReviewSearchType;
 use Plugin\ProductReview42\Form\Type\Admin\ProductReviewType;
 use Plugin\ProductReview42\Repository\ProductReviewConfigRepository;
+use Plugin\ProductReview42\Repository\ProductReviewImageRepository;
 use Plugin\ProductReview42\Repository\ProductReviewRepository;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -46,6 +52,11 @@ class ProductReviewController extends AbstractController
     protected $productReviewRepository;
 
     /**
+     * @var ProductReviewImageRepository
+     */
+    protected $productReviewImageRepository;
+
+    /**
      * @var ProductReviewConfigRepository
      */
     protected $productReviewConfigRepository;
@@ -58,17 +69,20 @@ class ProductReviewController extends AbstractController
      *
      * @param PageMaxRepository $pageMaxRepository
      * @param ProductReviewRepository $productReviewRepository
+     * @param ProductReviewImageRepository $productReviewImageRepository
      * @param ProductReviewConfigRepository $productReviewConfigRepository
      * @param CsvExportService $csvExportService
      */
     public function __construct(
         PageMaxRepository $pageMaxRepository,
         ProductReviewRepository $productReviewRepository,
+        ProductReviewImageRepository $productReviewImageRepository,
         ProductReviewConfigRepository $productReviewConfigRepository,
         CsvExportService $csvExportService
     ) {
         $this->pageMaxRepository = $pageMaxRepository;
         $this->productReviewRepository = $productReviewRepository;
+        $this->productReviewImageRepository = $productReviewImageRepository;
         $this->productReviewConfigRepository = $productReviewConfigRepository;
         $this->csvExportService = $csvExportService;
     }
@@ -185,12 +199,63 @@ class ProductReviewController extends AbstractController
         }
 
         $form = $this->createForm(ProductReviewType::class, $ProductReview);
+
+        // ファイルの登録
+        $images = [];
+        $ProductReviewImages = $ProductReview->getProductReviewImage();
+        foreach ($ProductReviewImages as $ProductReviewImage) {
+            $images[] = $ProductReviewImage->getFileName();
+        }
+        $form['images']->setData($images);
+
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $ProductReview = $form->getData();
             $this->entityManager->persist($ProductReview);
             $this->entityManager->flush($ProductReview);
+
+            // 画像の登録
+            $add_images = $form->get('add_images')->getData();
+            foreach ($add_images as $add_image) {
+                $ProductReviewImage = new \Plugin\ProductReview42\Entity\ProductReviewImage();
+                $ProductReviewImage
+                    ->setFileName($add_image)
+                    ->setProductReview($ProductReview)
+                    ->setSortNo(1);
+                $ProductReview->addProductReviewImage($ProductReviewImage);
+                $this->entityManager->persist($ProductReviewImage);
+
+                // 移動
+                $file = new File($this->eccubeConfig['product_review_temp_image_dir'].'/'.$add_image);
+                $file->move($this->eccubeConfig['product_review_save_image_dir']);
+            }
+
+            // 画像の削除
+            $delete_images = $form->get('delete_images')->getData();
+            $fs = new Filesystem();
+            foreach ($delete_images as $delete_image) {
+
+                $ProductReviewImage = $this->productReviewImageRepository->findOneBy([
+                    'ProductReview' => $ProductReview,
+                    'file_name' => $delete_image,
+                ]);
+
+                if ($ProductReviewImage instanceof ProductReviewImage) {
+                    $ProductReview->removeProductReviewImage($ProductReviewImage);
+                    $this->entityManager->remove($ProductReviewImage);
+                    $this->entityManager->flush();
+
+                    // 他に同じ画像を参照する商品がなければ画像ファイルを削除
+                    if (!$this->productReviewImageRepository->findOneBy(['file_name' => $delete_image])) {
+                        $fs->remove($this->eccubeConfig['product_review_save_image_dir'].'/'.$delete_image);
+                    }
+                } else {
+                    // 追加してすぐに削除した画像は、Entityに追加されない
+                    $fs->remove($this->eccubeConfig['product_review_temp_image_dir'].'/'.$delete_image);
+                }
+            }
+            $this->entityManager->flush();
 
             log_info('Product review edit');
 
@@ -300,5 +365,44 @@ class ProductReviewController extends AbstractController
         log_info('商品レビューCSV出力ファイル名', [$filename]);
 
         return $response;
+    }
+
+    /**
+     * @Route("/%eccube_admin_route%/customize/product_review/image/add", name="product_review_admin_image_add", methods={"POST"})
+     */
+    public function addImage(Request $request)
+    {
+
+        if (!$request->isXmlHttpRequest()) {
+            throw new BadRequestHttpException();
+        }
+
+        $images = $request->files->get('product_review');
+
+        $allowExtensions = ['gif', 'jpg', 'jpeg', 'png'];
+        $files = [];
+        if (count($images) > 0) {
+            foreach ($images as $img) {
+                foreach ($img as $image) {
+                    //ファイルフォーマット検証
+                    $mimeType = $image->getMimeType();
+                    if (0 !== strpos($mimeType, 'image')) {
+                        throw new UnsupportedMediaTypeHttpException();
+                    }
+
+                    // 拡張子
+                    $extension = $image->getClientOriginalExtension();
+                    if (!in_array(strtolower($extension), $allowExtensions)) {
+                        throw new UnsupportedMediaTypeHttpException();
+                    }
+
+                    $filename = date('mdHis').uniqid('_').'.'.$extension;
+                    $image->move($this->eccubeConfig['product_review_temp_image_dir'], $filename);
+                    $files[] = $filename;
+                }
+            }
+        }
+
+        return $this->json(['files' => $files], 200);
     }
 }

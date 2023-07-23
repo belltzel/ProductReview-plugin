@@ -27,6 +27,8 @@ use Eccube\Entity\Product;
  */
 class ProductReview extends AbstractEntity
 {
+    private $filename;
+
     /**
      * @var int
      *
@@ -70,11 +72,6 @@ class ProductReview extends AbstractEntity
      * @ORM\Column(name="youtube_video_player", type="text", nullable=true)
      */
     private $youtube_video_player;
-
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $filename;
 
     /**
      * @var Sex
@@ -128,6 +125,16 @@ class ProductReview extends AbstractEntity
     private $update_date;
 
     /**
+     * @var \Doctrine\Common\Collections\Collection
+     *
+     * @ORM\OneToMany(targetEntity="Plugin\ProductReview42\Entity\ProductReviewImage", mappedBy="ProductReview", cascade={"remove"})
+     * @ORM\OrderBy({
+     *     "sort_no"="ASC"
+     * })
+     */
+    private $ProductReviewImage;
+
+    /**
      * @var \Plugin\ProductReview42\Entity\ProductReviewStatus
      *
      * @ORM\ManyToOne(targetEntity="Plugin\ProductReview42\Entity\ProductReviewStatus")
@@ -136,6 +143,14 @@ class ProductReview extends AbstractEntity
      * })
      */
     private $Status;
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->ProductReviewImage = new \Doctrine\Common\Collections\ArrayCollection();
+    }
 
     /**
      * Get id.
@@ -449,5 +464,41 @@ class ProductReview extends AbstractEntity
     public function getUpdateDate()
     {
         return $this->update_date;
+    }
+
+    /**
+     * Add ProductReviewImage.
+     *
+     * @param \Plugin\ProductReview42\Entity\ProductReviewImage $ProductReviewImage
+     *
+     * @return ProductReview
+     */
+    public function addProductReviewImage(ProductReviewImage $ProductReviewImage)
+    {
+        $this->ProductReviewImage[] = $ProductReviewImage;
+
+        return $this;
+    }
+
+    /**
+     * Remove ProductReviewImage.
+     *
+     * @param \Plugin\ProductReview42\Entity\ProductReviewImage $ProductReviewImage
+     *
+     * @return boolean TRUE if this collection contained the specified element, FALSE otherwise.
+     */
+    public function removeProductReviewImage(ProductReviewImage $ProductReviewImage)
+    {
+        return $this->ProductReviewImage->removeElement($ProductReviewImage);
+    }
+
+    /**
+     * Get ProductReviewImage.
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getProductReviewImage()
+    {
+        return $this->ProductReviewImage;
     }
 }

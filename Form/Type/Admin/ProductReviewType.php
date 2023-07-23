@@ -19,6 +19,9 @@ use Plugin\ProductReview42\Entity\ProductReviewStatus;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -114,6 +117,40 @@ class ProductReviewType extends AbstractType
                 'attr' => [
                     'maxlength' => $config['eccube_ltext_len'],
                 ],
+            ])
+            ->add('youtube_video_player', TextType::class, [
+                'required' => false,
+                'label' => 'product_review.form.product_review.youtube_video_player',
+                'constraints' => [
+                    new Assert\Length(['max' => $config['eccube_ltext_len']]),
+                ],
+            ])
+            ->add('product_review_image', FileType::class, [
+                'multiple' => true,
+                'required' => false,
+                'mapped' => false,
+            ])
+            // 画像
+            ->add('images', CollectionType::class, [
+                'entry_type' => HiddenType::class,
+                'prototype' => true,
+                'mapped' => false,
+                'allow_add' => true,
+                'allow_delete' => true,
+            ])
+            ->add('add_images', CollectionType::class, [
+                'entry_type' => HiddenType::class,
+                'prototype' => true,
+                'mapped' => false,
+                'allow_add' => true,
+                'allow_delete' => true,
+            ])
+            ->add('delete_images', CollectionType::class, [
+                'entry_type' => HiddenType::class,
+                'prototype' => true,
+                'mapped' => false,
+                'allow_add' => true,
+                'allow_delete' => true,
             ]);
     }
 }
